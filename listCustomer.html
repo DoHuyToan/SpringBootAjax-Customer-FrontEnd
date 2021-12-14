@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+</head>
+<script type="text/javascript">
+
+    function addNewCustomer() {
+        let name = $('#name').val();
+        let phone = $('#phone').val();
+        let provinces = $('#provinces').val();
+        let newcustomer = {
+            name: name,
+            phone: phone,
+            provinces: {id: provinces}
+        };
+        $.ajax({
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            type: "POST",
+            data: JSON.stringify(newcustomer),
+            url: "http://localhost:8080/customers/create",
+            success: successHandler
+        })
+        event.preventDefault();
+    }
+
+    function successHandler() {
+        $.ajax({
+            type: "GET",
+            //tên API
+            url: "http://localhost:8080/customers/list",
+            //xử lý khi thành công
+            success: function (data) {
+                // hien thi danh sach o day
+                let content = '    <tr>\n' +
+                    '        <td>Name</td>\n' +
+                    '        <td>Phone</td>\n' +
+                    '        <td>Provinces</td>\n' +
+                    '        <td>Edit</td>\n' +
+                    '        <td>Delete</td>\n' +
+                    '    </tr>';
+                for (let i = 0; i < data.length; i++) {
+                    content += getCustomer(data[i]);
+                }
+                document.getElementById('customerList').innerHTML = content;
+            }
+        })
+    }
+    successHandler();
+
+    function getCustomer(customer) {
+        return `<tr><td >${customer.name}</td>
+                        <td >${customer.phone}</td>
+                        <td >${customer.provinces.name}</td>` +
+            `<td><button type="submit" value="${customer.id}" onclick="showEdit(this)">Edit</button></td>` +
+            `<td><button type="submit" value="${customer.id}" onclick="deleteCustomer(this)">Delete</button></td></tr>`
+    }
+
+    listProvinces('provincesEdit')
+    listProvinces('provinces')
+    function listProvinces(a) {
+        $.ajax({
+            type: "GET",
+            url: "http://localhost:8080/provinces/list",
+            success: function (data){
+                let content;
+                for (let i=0; i<data.length; i++ ){
+                    content += getProvinces(data[i])
+                }
+                document.getElementById(a).innerHTML = content;
+            }
+        })
+    }
+    //
+    function getProvinces(provinces){
+        return `<option value="${provinces.id}">${provinces.name}</option>`
+    }
+
+    function deleteCustomer(a){
+        let id=a.getAttribute("value");
+        $.ajax({
+            type:"DELETE",
+            url:"http://localhost:8080/customers/delete/"+id,
+            success:successHandler
+        })
+    }
+
+    function showEdit(a) {
+        let id = a.getAttribute("value");
+        $.ajax({
+            type: "GET",
+            url: "http://localhost:8080/customers/" + id,
+            success: function (customer) {
+                $('#idEdit').val(customer.id);
+                $('#nameEdit').val(customer.name);
+                $('#phoneEdit').val(customer.phone);
+                $('#provincesEdit').val(customer.provinces);
+            }
+        })
+        event.preventDefault();
+    }
+
+    function updateCustomer(){
+        let id=$('#idEdit').val();
+        let name=$('#nameEdit').val();
+        let phone=$('#phoneEdit').val();
+        let provinces=$('#provincesEdit').val();
+        let customer={
+            id :id,
+            name:name,
+            phone:phone,
+            provinces: {id:provinces}
+        };
+        $.ajax({
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            type: "PUT",
+            url: "http://localhost:8080/customers/edit",
+            data: JSON.stringify(customer),
+            success:successHandler
+        })
+        event.preventDefault();
+    }
+
+</script>
+<body>
+<form id="add-customer" style="display: block">
+    <h2>Create Customer</h2>
+    <table>
+        <tr>
+            <td>Name:</td>
+            <td><input type="text" id="name" placeholder="name"></td>
+        </tr>
+        <tr>
+            <td>Phone:</td>
+            <td><input type="text" id="phone" placeholder="phone"></td>
+        </tr>
+        <tr>
+            <td>Provinces:</td>
+            <td>
+                <select id="provinces">
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td><input type="submit" value="Add" onclick="addNewCustomer()"></td>
+        </tr>
+    </table>
+</form>
+<h1>CUSTOMER LIST</h1>
+<table border="1" id="customerList">
+<!--    <tr>-->
+<!--        <th>Name</th>-->
+<!--        <th>Phone</th>-->
+<!--        <th>Provinces</th>-->
+<!--        <th>Edit</th>-->
+<!--        <th>Delete</th>-->
+<!--    </tr>-->
+<!--    <tr th:each="c : ${customerList}">-->
+<!--        <td th:text="${c.name}"></td>-->
+<!--        <td th:text="${c.phone}"></td>-->
+<!--        <td th:if="${c.provinces}" th:text="${c.provinces.name}"></td>-->
+<!--        <td th:unless="${c.provinces}"></td>-->
+<!--        <td><button type="submit" th:value="${c.id}" onclick="editForm(this)">Edit</button></td>-->
+<!--        <td><button type="submit" th:value="${c.id}" onclick="deleteCustomer(this)">Delete</button></td>-->
+<!--    </tr>-->
+</table>
+<br>
+<h2>Edit Customer</h2>
+<form id="editForm">
+    <table>
+        <input type="text" id="idEdit" hidden/>
+        <tr>
+            <td>Name :</td>
+            <td><input type="text" id="nameEdit" placeholder=" name change"></td>
+        </tr>
+        <tr>
+            <td>Phone :</td>
+            <td><input type="text" id="phoneEdit" placeholder=" phone change"></td>
+        </tr>
+        <tr>
+            <td>Provinces:</td>
+            <td>
+                <select id="provincesEdit">
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td></td>
+            <td><input type="submit" value="Update" onclick="updateCustomer()"></td>
+        </tr>
+    </table>
+</form>
+</body>
+</html>
